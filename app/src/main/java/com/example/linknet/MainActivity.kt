@@ -18,8 +18,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        tv_click_result.setOnClickListener{
+        tv_click_result1.setOnClickListener{
             testCoroutine()
+        }
+        tv_click_result2.setOnClickListener{
+            testYield()
         }
     }
 
@@ -39,6 +42,8 @@ class MainActivity : AppCompatActivity() {
 
             delay(200L)
 
+            yield()
+
             outPutThreadLog(2)
         }
 
@@ -56,6 +61,36 @@ class MainActivity : AppCompatActivity() {
         Thread.sleep(600L)
 
         outPutThreadLog(6)
+    }
+
+    @ObsoleteCoroutinesApi
+    private fun testYield() {
+        outPutThreadLog(0)
+        val singleDispatcher = newSingleThreadContext("Single")
+
+        runBlocking {
+            val job = GlobalScope.launch {
+                launch {
+                    withContext(singleDispatcher) {
+                        repeat(3) {
+                            outPutThreadLog(1)
+                            //yield()
+                        }
+                    }
+                }
+
+                launch {
+                    withContext(singleDispatcher) {
+                        repeat(3) {
+                            outPutThreadLog(2)
+                            //yield()
+                        }
+                    }
+                }
+            }
+
+            job.join()
+        }
     }
 
     private fun outPutThreadLog(index: Int) {

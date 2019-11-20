@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">LinkNet</string>
 
-    <string name="title_test1">测试淘宝关键词</string>
+    <string name="title_test1">XXXX</string>
     <string name="desc_test1">点击查看测试结果</string>
-    <string name="hint_test1">请输入要查询的淘宝关键词</string>
+    <string name="hint_test1">XXXXXXX</string>
+
+    <string name="title_test2">测试yield</string>
+    <string name="desc_test2">点击查看yield结果</string>
 </resources>
