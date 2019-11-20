@@ -67,23 +67,24 @@ class MainActivity : AppCompatActivity() {
     private fun testYield() {
         outPutThreadLog(0)
         val singleDispatcher = newSingleThreadContext("Single")
-
         runBlocking {
             val job = GlobalScope.launch {
+                outPutThreadLog(7)
                 launch {
                     withContext(singleDispatcher) {
                         repeat(3) {
                             outPutThreadLog(1)
-                            //yield()
+                            yield()
                         }
                     }
                 }
 
                 launch {
+                    outPutThreadLog(8)
                     withContext(singleDispatcher) {
-                        repeat(3) {
+                        repeat(4) {
                             outPutThreadLog(2)
-                            //yield()
+                            yield()
                         }
                     }
                 }
@@ -93,7 +94,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun outPutThreadLog(index: Int) {
+    private fun outPutThreadLog(index: Int, sleepTimeMillis : Long = 1500L) {
         Log.d(TAG, "$index : -- Current thread : ${Thread.currentThread().name}")
+        if (sleepTimeMillis > 0) {
+            Thread.sleep(sleepTimeMillis)
+        }
     }
 }
