@@ -12,89 +12,50 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         initView()
-        initData()
     }
 
     private fun initView() {
         tv_click_result1.setOnClickListener{
             testCoroutine()
         }
-        tv_click_result2.setOnClickListener{
-            testYield()
-        }
-    }
-
-    private fun initData() {
-
     }
 
     /**
      * 测试 协程代码
      */
     private fun testCoroutine() {
-        outPutThreadLog(0)
-
-        val coroutineScope = CoroutineScope(Dispatchers.IO)
-        var job1 =coroutineScope.launch {
-            outPutThreadLog(1)
-
-            delay(200L)
-
-            yield()
-
-            outPutThreadLog(2)
+        val lastTime = System.currentTimeMillis()
+        val coroutineScope = CoroutineScope(Dispatchers.Default)
+        coroutineScope.launch{
+            val one = async(Dispatchers.IO) { doSomethingUsefulOne() }
+            val two = async(Dispatchers.IO) { doSomethingUsefulTwo() }
+            withContext(Dispatchers.Main) {
+                tv_desc1.text = (one.await() + two.await()).toString() + " Time: " + (System.currentTimeMillis() - lastTime).toString()
+            }
         }
-
-        var job2 = GlobalScope.launch {
-            outPutThreadLog(3)
-
-            delay(400L)
-
-            outPutThreadLog(4)
-            job1.join()
-        }
-
-        outPutThreadLog(5)
-
-        Thread.sleep(600L)
-
-        outPutThreadLog(6)
     }
 
-    @ObsoleteCoroutinesApi
-    private fun testYield() {
-        outPutThreadLog(0)
-        val singleDispatcher = newSingleThreadContext("Single")
-        runBlocking {
-            val job = GlobalScope.launch {
-                outPutThreadLog(7)
-                launch {
-                    withContext(singleDispatcher) {
-                        repeat(3) {
-                            outPutThreadLog(1)
-                            yield()
-                        }
-                    }
-                }
+    suspend fun doSomethingUsefulOne(): Int {
+        delay(1000L) // 假设我们在这里做了一些有用的事
+        return 13
+    }
 
-                launch {
-                    outPutThreadLog(8)
-                    withContext(singleDispatcher) {
-                        repeat(4) {
-                            outPutThreadLog(2)
-                            yield()
-                        }
-                    }
-                }
-            }
-
-            job.join()
+    suspend fun doSomethingUsefulTwo(): Int {
+        withContext(Dispatchers.IO) {
+            Thread.sleep(1000L) // 假设我们在这里也做了一些有用的事
         }
+        return 29
     }
 
     private fun outPutThreadLog(index: Int, sleepTimeMillis : Long = 1500L) {
+        Log.d(TAG, "$index : -- Current thread : ${Thread.currentThread().name}")
+        if (sleepTimeMillis > 0) {
+            Thread.sleep(sleepTimeMillis)
+        }
+    }
+
+    private fun outPutThreadLog(index: Long, sleepTimeMillis : Long = 1500L) {
         Log.d(TAG, "$index : -- Current thread : ${Thread.currentThread().name}")
         if (sleepTimeMillis > 0) {
             Thread.sleep(sleepTimeMillis)
