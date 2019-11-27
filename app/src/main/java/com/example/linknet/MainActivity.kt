@@ -1,13 +1,26 @@
 package com.example.linknet
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
+import android.os.Handler
+import android.os.Message
 import android.util.Log
+import android.widget.ImageView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
+import java.io.File
+import java.io.FileOutputStream
+import java.lang.Exception
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     val TAG = "MainActivity"
+    var bitmap : Bitmap? = null
+    lateinit var image : ImageView
+    var handler = myHandler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,49 +29,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        tv_click_result1.setOnClickListener{
-            testCoroutine()
+        image = iv_image_test
+        tv_click_result1.setOnClickListener {
+            loadImageWithHandler()
         }
     }
 
-    /**
-     * 测试 协程代码
-     */
-    private fun testCoroutine() {
-        val lastTime = System.currentTimeMillis()
-        val coroutineScope = CoroutineScope(Dispatchers.Default)
-        coroutineScope.launch{
-            val one = async(Dispatchers.IO) { doSomethingUsefulOne() }
-            val two = async(Dispatchers.IO) { doSomethingUsefulTwo() }
-            withContext(Dispatchers.Main) {
-                tv_desc1.text = (one.await() + two.await()).toString() + " Time: " + (System.currentTimeMillis() - lastTime).toString()
+    private fun loadImageWithCoroutine() {
+        GlobalScope.launch {
+            Log.d(TAG, "")
+        }
+    }
+
+    private fun loadImageWithHandler() {
+        Upload("https://static.jam.vg/raw/658/d1/z/29f87.png").start()
+//        Upload("https://static-cdn.jtvnw.net/previews-ttv/live_user_semiwork.jpg").start()
+    }
+
+
+    /*在主线程中更新UI的Handler*/
+    inner class myHandler : Handler() {
+        override fun handleMessage(msg : Message) {
+            if (msg.what == 111) {
+                iv_image_test.setImageBitmap(bitmap)
             }
         }
     }
 
-    suspend fun doSomethingUsefulOne(): Int {
-        delay(1000L) // 假设我们在这里做了一些有用的事
-        return 13
-    }
+    private inner class Upload(url: String) : Thread() {
+        var mUrl: String? = url
 
-    suspend fun doSomethingUsefulTwo(): Int {
-        withContext(Dispatchers.IO) {
-            Thread.sleep(1000L) // 假设我们在这里也做了一些有用的事
-        }
-        return 29
-    }
+        override fun run() {
+            super.run()
+            try {
+                //对资源链接
+                var url = URL(mUrl)
+                //打开输入流
+                var inputStream = url.openStream()
+                //对网上资源进行下载并转换为位图图片
+                bitmap = BitmapFactory.decodeStream(inputStream)
+                handler.sendEmptyMessage(111)
+                inputStream.close()
 
-    private fun outPutThreadLog(index: Int, sleepTimeMillis : Long = 1500L) {
-        Log.d(TAG, "$index : -- Current thread : ${Thread.currentThread().name}")
-        if (sleepTimeMillis > 0) {
-            Thread.sleep(sleepTimeMillis)
-        }
-    }
+                inputStream = url.openStream()
+                val file = File("${Environment.getExternalStorageDirectory()}/newImage.png")
+                val fileOutputStream = FileOutputStream(file)
+                var hasRead = 0
 
-    private fun outPutThreadLog(index: Long, sleepTimeMillis : Long = 1500L) {
-        Log.d(TAG, "$index : -- Current thread : ${Thread.currentThread().name}")
-        if (sleepTimeMillis > 0) {
-            Thread.sleep(sleepTimeMillis)
+                while (hasRead != -1) {
+                    hasRead = inputStream.read()
+                    fileOutputStream.write(hasRead)
+                }
+                fileOutputStream.close()
+                inputStream.close()
+            } catch (e : Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
