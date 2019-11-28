@@ -15,11 +15,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.lang.Exception
 import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 
 class MainActivity : AppCompatActivity() {
     val TAG = "MainActivity"
-    var bitmap : Bitmap? = null
-    lateinit var image : ImageView
+    var bitmap: Bitmap? = null
+    lateinit var image: ImageView
     var handler = myHandler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,13 +32,19 @@ class MainActivity : AppCompatActivity() {
     private fun initView() {
         image = iv_image_test
         tv_click_result1.setOnClickListener {
-            loadImageWithHandler()
+//            loadImageWithHandler()
+            loadImageWithCoroutine()
         }
     }
 
     private fun loadImageWithCoroutine() {
-        GlobalScope.launch {
-            Log.d(TAG, "")
+        Log.e(TAG, "开始展示图片人物的协程前，当前线程： ${Thread.currentThread().name}")
+        val coroutineContext = CoroutineScope(Dispatchers.Main)
+        coroutineContext.launch {
+            Log.e(TAG, "开始任务后，当前线程： ${Thread.currentThread().name}")
+            val bitmap = getInternetImage("https://static.jam.vg/raw/658/d1/z/29f87.png")
+            Log.e(TAG, "完成down图片的时候，当前线程： ${Thread.currentThread().name}")
+            iv_image_test.setImageBitmap(bitmap)
         }
     }
 
@@ -47,9 +54,21 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private suspend fun getInternetImage(url: String) : Bitmap? = withContext(Dispatchers.IO) {
+        Log.e(TAG, "开始准备down图片的时候，当前线程： ${Thread.currentThread().name}")
+        try {
+            val url = URL(url)
+            val inputStream = url.openStream()
+            return@withContext BitmapFactory.decodeStream(inputStream)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        null
+    }
+
     /*在主线程中更新UI的Handler*/
     inner class myHandler : Handler() {
-        override fun handleMessage(msg : Message) {
+        override fun handleMessage(msg: Message) {
             if (msg.what == 111) {
                 iv_image_test.setImageBitmap(bitmap)
             }
@@ -82,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 fileOutputStream.close()
                 inputStream.close()
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
